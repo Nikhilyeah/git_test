@@ -1,11 +1,12 @@
 name: Deploy to Firebase
 on:
   workflow_dispatch:
-    input:
+    inputs:
       release_notes:
         type: string
         required: true
         default: 'Manual Debug Build'
+        description: 'Release notes'
 
 jobs:
   build:
