@@ -1,0 +1,64 @@
+name: Ultra-Fast Flutter Build
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17 (Required for Flutter)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache Everything
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            ~/.gradle/caches
+            /opt/hostedtoolcache/flutter
+            android/gradle-wrapper
+          key: ${{ runner.os }}-flutter-${{ hashFiles('*/pubspec.lock', '*/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
+      - name: Setup Flutter (Cached)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.4'
+          channel: 'stable'
+          cache: true
+      
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build APK (Optimized)
+        run: |
+          flutter build apk \
+            --release \
+            --shrink \
+            --split-debug-info \
+            --no-pub
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 3
+
+      - name: Upload to Firebase
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_CREDENTIALS }}
+          groups: testers
+          file: build/app/outputs/flutter-apk/app-release.apk
+          releaseNotes: "Changes: ${{ github.event.head_commit.message }}"
