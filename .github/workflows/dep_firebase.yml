@@ -62,5 +62,3 @@ jobs:
           groups: testers
           file: build/app/outputs/flutter-apk/app-release.apk
           releaseNotes: "Changes: ${{ github.event.head_commit.message }}"
-        env:
-          ACTIONS_RUNNER_DEBUG: true
